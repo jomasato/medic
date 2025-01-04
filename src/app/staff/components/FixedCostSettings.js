@@ -1,15 +1,14 @@
 "use client"
 import React from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Building, Building2 } from 'lucide-react';
+import { NumberInput } from './NumberInput';
 
 const FixedCostSettings = ({ costs, selectedPreset, onUpdate }) => {
   const handleInputChange = (key, value) => {
     const updatedCosts = {
       ...costs,
-      [key]: Number(value)
+      [key]: value // valueは既にNumber型なので変換不要
     };
     onUpdate(selectedPreset, updatedCosts);
   };
@@ -22,6 +21,19 @@ const FixedCostSettings = ({ costs, selectedPreset, onUpdate }) => {
     { key: 'systemFee', label: 'システム料', icon: null },
     { key: 'other', label: 'その他経費', icon: null }
   ];
+
+  // 合計金額の計算と表示用フォーマット
+  const totalCost = Object.values(costs || {})
+    .filter(value => !isNaN(value) && value !== null && value !== undefined)
+    .reduce((a, b) => a + Number(b), 0);
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('ja-JP', { 
+      style: 'currency', 
+      currency: 'JPY',
+      maximumFractionDigits: 0 
+    }).format(value);
+  };
 
   return (
     <div className="space-y-6">
@@ -48,19 +60,20 @@ const FixedCostSettings = ({ costs, selectedPreset, onUpdate }) => {
       {/* 固定費入力フォーム */}
       <div className="space-y-4">
         {costItems.map(({ key, label, icon: Icon }) => (
-          <div key={key} className="space-y-2">
-            <Label htmlFor={key} className="flex items-center">
-              {Icon && <Icon className="w-4 h-4 mr-2" />}
-              {label}
-            </Label>
-            <Input
-              id={key}
-              type="number"
-              value={costs?.[key] ?? ''}
-              onChange={(e) => handleInputChange(key, e.target.value)}
-              min="0"
-            />
-          </div>
+          <NumberInput
+            key={key}
+            id={key}
+            label={
+              <span className="flex items-center">
+                {Icon && <Icon className="w-4 h-4 mr-2" />}
+                {label}
+              </span>
+            }
+            value={costs?.[key] ?? 0}
+            onChange={(value) => handleInputChange(key, value)}
+            min={0}
+            allowZero={true}
+          />
         ))}
       </div>
 
@@ -69,15 +82,7 @@ const FixedCostSettings = ({ costs, selectedPreset, onUpdate }) => {
         <div className="flex justify-between items-center">
           <span className="font-medium">月間固定費合計</span>
           <span className="text-lg font-bold">
-            {new Intl.NumberFormat('ja-JP', { 
-              style: 'currency', 
-              currency: 'JPY',
-              maximumFractionDigits: 0 
-            }).format(
-              Object.values(costs || {})
-                .filter(value => !isNaN(value) && value !== null && value !== undefined)
-                .reduce((a, b) => a + Number(b), 0)
-            )}
+            {formatCurrency(totalCost)}
           </span>
         </div>
       </div>
